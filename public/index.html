@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="utf-8" />
+    <title>webtoc - mktoc on the web</title>
+    <style type="text/css">
+        :root {
+            --color-primary: #99f6e4;
+            --color-primary-contrast: #115e59;
+            --color-bg: #e2e8f0;
+
+            --spacing-default: 2rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            font: 16px/1.65 system-ui, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            background: var(--color-bg);
+            border-top: .25em solid var(--color-primary, #fdfdfd);
+        }
+
+        a {
+            color: #3b82f6;
+        }
+
+        a:hover,
+        a:visited {
+            color: #5b21b6;
+        }
+
+        textarea {
+            padding: 1rem;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        textarea:focus {
+            border-color: var(--color-primary);
+            outline: 1px solid var(--color-primary);
+        }
+
+        textarea,
+        button,
+        .info-header,
+        .error {
+            font-size: 1rem;
+            box-shadow: .15em .15em 0 var(--color-primary-contrast);
+            border-radius: 6px;
+        }
+
+        button {
+            background: var(--color-primary);
+            color: var(--color-primary-contrast, #333);
+            padding: .5em .75em;
+            margin: 1rem 0;
+            border-radius: 16px 6px;
+        }
+
+        button:hover {
+            cursor: pointer;
+        }
+
+        button:active {
+            box-shadow: none;
+            margin-left: 1.15em;
+            margin-top: 1.15em;
+        }
+
+        main {
+            padding: var(--spacing-default);
+        }
+
+        .divider {
+            width: 100%;
+            border: none;
+            display: block;
+            margin: var(--spacing-default) auto;
+            height: .15rem;
+            background: var(--color-primary-contrast);
+        }
+
+        header {
+            margin-bottom: var(--spacing-default);
+        }
+
+        .info-header {
+            margin: var(--spacing-default) 0;
+            background: #fdfdfd;
+            padding: var(--spacing-default);
+        }
+
+        .info-header ol {
+            padding-left: var(--spacing-default);
+        }
+
+        .flex {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-direction: row;
+            gap: var(--spacing-default);
+        }
+
+        pre {
+            background: #f1f1f1;
+            max-width: 100%;
+            padding: 1rem;
+            overflow: auto;
+        }
+
+        .error {
+            display: none;
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            text-align: right;
+        }
+
+        .error.active {
+            display: block;
+            background: #db2777;
+            color: #fce7f3;
+            padding: .25em .5em;
+            margin-top: .5rem;
+            max-width: fit-content;
+        }
+
+        .form-or {
+            text-align: left;
+            margin: 1rem 0;
+        }
+
+        @media all and (max-width: 50rem) {
+            .info-header .flex {
+                display: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <header class="page-header">
+            <h1>webtoc</h1>
+            <p><a href="https://github.com/KevinGimbel/mktoc" target="_blank">mktoc</a> on the web, thanks to <a
+                    href="https://webassembly.org" target="_blank">WebAssembly</a>!</p>
+        </header>
+        <section class="info-header">
+            <div class="flex">
+                <section>
+                    <h2>Usage</h2>
+                    <ol>
+                        <li><a href="https://github.com/KevinGimbel/mktoc#update-markdown-file">Prepare your Markdown
+                                file</a> for best results</li>
+                        <li>Paste markdown or upload a Markdown file (ending in `<code>.md</code>` or
+                            `<code>.markdown</code>`)</li>
+                        <li>Click Generate Table of Contents</li>
+                        <li>Profit 💰💰💰</li>
+                    </ol>
+                </section>
+                <section>
+                    <h2>About</h2>
+                    <p><a href="https://github.com/KevinGimbel/webtoc">webtoc</a> is a web version of <a
+                            href="https://github.com/KevinGimbel/mktoc"
+                            title="View mktoc source code on GitHub">mktoc</a>,
+                        a table of content genration library
+                        written in Rust.<br> The Rust code is compiled to WebAssembly which is loaded natively in the
+                        browser using JavaScript.</p>
+                </section>
+            </div>
+        </section>
+
+        <section class="app">
+            <h2>Input</h2>
+            <p>Paste markdown content here ...</p>
+            <textarea name="markdown" id="markdown" rows="15"></textarea><br />
+            <div class="flex">
+                <p class="form-or">... or upload a file <input type="file" id="markdown_file" /></p>
+                <button type="submit" id="compile">Generate Table of Contents</button>
+            </div>
+            <p class="error" id="error"></p>
+
+            <hr class="divider">
+
+            <h2>Output</h2>
+            <div class="flex">
+                <p>Get your Table of Contents here</p>
+                <button id="copy">Copy to clipboard</button>
+            </div>
+            <pre><code id="output"></code></pre>
+        </section>
+    </main>
+    <script type="module">
+        import init, { make_toc, make_toc_only } from "./pkg/webtoc.js";
+        const markdown_input = document.querySelector("#markdown");
+        const markdown_file = document.querySelector("#markdown_file");
+        const compile_btn = document.querySelector("#compile");
+        const copy_btn = document.querySelector("#copy");
+        const output_area = document.querySelector("#output");
+        const error_output = document.querySelector("#error");
+        const sample = `
+# Sample
+
+<!-- BEGIN mktoc -->
+
+<!-- END mktoc -->
+
+This is an example document.
+
+## Sample heading 2
+
+\`\`\`rust 
+pub fn hello(name: &str) -> String {
+    format!("Hello, {}!", name)
+}
+\`\`\``;
+
+        markdown_input.value = sample;
+
+        function triggerError(msg) {
+            error_output.innerHTML = `<span><b>[ ! ]</b> ${msg}</span>`;
+            error_output.classList.add("active");
+            setTimeout(() => {
+                error_output.textContent = "";
+                error_output.classList.remove("active");
+            }, 5000)
+        }
+
+        // load the file and parse it, no upload required
+        markdown_file.addEventListener("change", readFile);
+        function readFile() {
+            const [file] = markdown_file.files;
+            const reader = new FileReader();
+
+            let dot_split = file.name.split(".");
+            let file_ext = dot_split[dot_split.length - 1].toLowerCase()
+
+            if (file_ext !== "md" && file_ext !== "markdown") {
+                triggerError("Not a markdown file. Please add .md or .markdown file");
+                // reset the file input
+                markdown_file.value = "";
+                return;
+            }
+
+            reader.addEventListener("load", () => {
+                // pass the file to make_toc
+                markdown_input.value = "";
+                generate_toc(reader.result);
+            });
+
+            if (file) {
+                reader.readAsText(file);
+            }
+        }
+
+        copy_btn.addEventListener("click", (event) => {
+            const type = "text/plain";
+            const blob = new Blob([output_area.textContent], { type });
+            const data = [new ClipboardItem({ [type]: blob })];
+
+            navigator.clipboard.write(data).then(() => {
+                console.log("Copied to clipboard");
+            }, (error) => {
+                console.error("Couldn't copy to clipboard: ", error);
+            });
+        });
+
+        function generate_toc(input) {
+            let start = new Date().getTime();
+            let output = make_toc(input);
+
+            if (output == input) {
+                console.log("Nothing changed.");
+                triggerError("No mktoc marker comments found, only creating table of contents.")
+                // only generate ToC
+                output = make_toc_only(input);
+            }
+            output_area.textContent = output;
+            console.log("Generation took took: ", new Date().getTime() - start, "ms");
+        }
+
+        init().then(() => {
+            generate_toc(sample);
+            compile_btn.addEventListener("click", (event) => {
+                if (markdown_file.files.length) {
+                    readFile();
+                    if (markdown_input.value !== "") {
+                        triggerError("Found file and text input. Ignoring text input.")
+                    }
+                    return;
+                }
+
+                if (markdown_input.value == "") {
+                    triggerError("Please enter some Markdown into the input field or select a file.")
+                }
+
+                let input = markdown_input.value;
+                generate_toc(input);
+            });
+        });
+    </script>
+</body>
+
+</html>
