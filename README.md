@@ -20,9 +20,4 @@
 
 ## Development
 
-1. Install wasm-pack: `cargo install wasm-pack`
-2. Run the make build command: `make build`
-
-This compiles the Rust code from `src/lib.rs` into WebAssembly, then places it inside `public/pkg/`.
-
-Changes to the Front-end can be done in `public/index.html`. 
+The JavaScript and WASM code is build as part of [mktoc](https://github.com/KevinGimbel/mktoc/tree/main/wasm). Changes to the Front-end can be done in `public/index.html`, the JavaScript and WASM code is currently loaded via [unpkg.com](https://unpkg.com).
